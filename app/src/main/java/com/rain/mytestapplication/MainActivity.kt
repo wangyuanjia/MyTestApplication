@@ -49,6 +49,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.suspendCancellableCoroutine
+import java.io.IOException
 import java.lang.StringBuilder
 
 import kotlin.coroutines.resume
@@ -76,6 +77,8 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+        startActivity(Intent(this,TestActivity::class.java))
 
         CoroutineScope(SupervisorJob()).launch {
             testString()
@@ -109,7 +112,7 @@ class MainActivity : ComponentActivity() {
 //        Looper.prepare()
 
 
-        val homeViewModel = ViewModelProvider(this).get(HomeViewModel::class.java)
+         homeViewModel = ViewModelProvider(this).get(HomeViewModel::class.java)
         viewModelStore.keys()
 
         homeViewModel.testLiveData.observe(this) {
@@ -124,7 +127,41 @@ class MainActivity : ComponentActivity() {
 
         }
 
+        isGoogleDNSReachable()
 
+        testSort()
+    }
+
+
+     fun isGoogleDNSReachable(): Boolean {
+        return try {
+            val process = Runtime.getRuntime().exec("ping -c 1 8.8.8.8")
+            process.inputStream.bufferedReader().use { reader ->
+                var isReachable = false
+                reader.forEachLine { line ->
+                    if (line.matches(".*1 packets transmitted, 1 received.*".toRegex())) {
+                        isReachable = true
+                        return@forEachLine
+                    }
+                }
+                print("isReachable1 $isReachable")
+                isReachable
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+            print("isReachable 2${e.message}")
+            false
+        }
+
+    }
+
+    private fun testSort(){
+        val names = mutableListOf("122","qwwe","srr","avf","eff","22167","123","087")
+        val sortNameDes = names.sortedByDescending { it }
+        val sortBy =  names.sortBy { it }
+        val reverseName = sortNameDes.reversed()
+        print("     testSort: reverseName = $names \n")
+        print("     testSort: sortNameDes = $sortNameDes")
     }
 
     suspend fun forTest(){

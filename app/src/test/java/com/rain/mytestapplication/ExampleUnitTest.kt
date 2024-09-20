@@ -1,5 +1,6 @@
 package com.rain.mytestapplication
 
+import com.rain.mytestapplication.tools.ArrayTools
 import org.junit.Test
 
 import org.junit.Assert.*
@@ -12,6 +13,8 @@ import org.junit.Assert.*
 class ExampleUnitTest {
     @Test
     fun addition_isCorrect() {
-        assertEquals(4, 2 + 2)
+        ArrayTools.removeArrayElement()
+//        assertEquals(4, 2 + 2)
+
     }
 }

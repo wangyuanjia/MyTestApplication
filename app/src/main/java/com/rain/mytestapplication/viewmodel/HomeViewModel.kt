@@ -24,7 +24,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 
-class HomeViewModel  constructor(s:String) : ViewModel() {
+class HomeViewModel : ViewModel() {
 
     companion object {
         var KEY_STRING_ONE = 0
