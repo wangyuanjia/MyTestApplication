@@ -1,17 +1,34 @@
 package com.rain.mytestapplication
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Bundle
 import android.provider.CalendarContract.Colors
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.DragAndDropPermissions
+import android.view.DragEvent
+import android.webkit.WebView
 import android.widget.EditText
 import android.widget.TextView
 import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
 
-class TestActivity : ComponentActivity() {
+class TestActivity : AppCompatActivity() {
 
     var tv1 : TextView?=null
     var tv2 : TextView?=null
@@ -44,10 +61,82 @@ class TestActivity : ComponentActivity() {
             }
 
         })
-
+        isGoogle()
 
     }
 
+
+    private fun isGoogle(){
+
+//        GlobalScope.launch {
+//            println("canAccessInternet = ${ async { canAccessInternet() }.await()}")
+//        }
+
+        GlobalScope.launch {
+            println("canAccessInternet = ${ async { checkGstaticAccessSync() }.await()}")
+        }
+    }
+
+
+
+    fun checkGstaticAccessSync() {
+        println("canAccessInternet,responseCode = -------------")
+        // 创建 OkHttpClient
+        val client = OkHttpClient()
+
+        // 创建 Request 对象
+        val request = Request.Builder()
+            .url("https://www.gstatic.com/robots.txt")  // 请求 www.gstatic.com 的资源
+            .build()
+
+        try {
+            // 同步请求，execute 会阻塞当前线程
+            val response: Response = client.newCall(request).execute()
+
+            // 检查响应是否成功
+            if (response.isSuccessful) {
+                println("Successfully accessed gstatic.com")
+                // 读取响应数据
+                val responseData = response.body?.string()
+                println("Response Data: $responseData")
+                println("canAccessInternet,responseCode = true")
+            } else {
+                println("Failed to access gstatic.com: Response code ${response.code}")
+                println("canAccessInternet,responseCode = false")
+            }
+
+            // 关闭响应
+            response.close()
+
+        } catch (e: IOException) {
+            // 处理请求失败的异常
+            println("Error accessing gstatic.com: ${e.message}")
+        }
+    }
+
+
+
+    suspend  fun canAccessInternet(): Boolean {
+        return try {
+            println("canAccessInternet,responseCode = -------------")
+            withContext(Dispatchers.IO) {
+//                val url = URL("https://blog.geekzhao.me/http_generate_204.html")
+                val url = URL("https://www.gstatic.com/robots.txt")
+//                val url = URL("https://www.google.com")
+//                val url = URL("google.com")
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 500
+                connection.connect()
+                // 判断响应码是否为 200，表示请求成功
+                println("canAccessInternet,responseCode = ${connection.responseCode}")
+                connection.responseCode == 200
+            }
+        } catch (e: Exception) {
+            println("canAccessInternet,responseCode connect error e = ${e.message}")
+            false
+        }
+    }
     val secretWord = "qwert"
     var resultWord = hashMapOf<Int, String>()
     var tempWold = mutableListOf<Int>()
@@ -123,4 +212,25 @@ class TestActivity : ComponentActivity() {
 //        tv4?.setTextColor(0x222222)
     }
 
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(newBase)//多语言
+        WebView(this)
+    }
+
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    override fun requestDragAndDropPermissions(event: DragEvent?): DragAndDropPermissions {
+        return super.requestDragAndDropPermissions(event)
+    }
+
+    override fun shouldShowRequestPermissionRationale(permission: String): Boolean {
+        return super.shouldShowRequestPermissionRationale(permission)
+    }
 }

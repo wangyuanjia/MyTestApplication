@@ -10,15 +10,22 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.rain.mytestapplication.num
+import kotlinx.coroutines.FlowPreview
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.combineLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -30,8 +37,15 @@ class HomeViewModel : ViewModel() {
         var KEY_STRING_ONE = 0
     }
 
+    val mutableState = MutableStateFlow(value = -1)
+
+    val mutableSharedFlow = MutableSharedFlow<Int>()
+
+    val liveData = MutableLiveData<Int>()
 
     val homeText: Int? = null
+
+    val map = HashMap<String,String>()
 
     var testLiveData = MutableLiveData<String>()
 
@@ -41,6 +55,7 @@ class HomeViewModel : ViewModel() {
 
     fun main(): IntArray {
         viewModelScope.launch {
+            mutableState.emit(1)
             testLiveData.value = "aa"
             testLiveData.postValue("")
         }
@@ -54,7 +69,8 @@ class HomeViewModel : ViewModel() {
     }
 
 
-    fun dealString() {
+    @OptIn(FlowPreview::class)
+    suspend fun dealString() {
 
         var stringBuilder = StringBuilder("")
 
@@ -90,6 +106,10 @@ class HomeViewModel : ViewModel() {
 
 
         var sharedFlow = MutableSharedFlow<String>()
+        val stateFlow = MutableStateFlow(String)
+        stateFlow.sample(500).collectLatest {
+
+        }
 
 //        flow.shareIn().stateIn()
         arrayListOf("1","2","3").forEach {
@@ -102,8 +122,11 @@ class HomeViewModel : ViewModel() {
 
             }
 
-            sharedFlow.collect{
-                Log.d(this.javaClass.name,it)
+//            sharedFlow.collect{
+//                Log.d(this.javaClass.name,it)
+//            }
+            sharedFlow.sample(500).collectLatest{
+
             }
         }
 
@@ -123,4 +146,25 @@ class HomeViewModel : ViewModel() {
     }
 
 
+    fun merge(nums1: IntArray, m: Int, nums2: IntArray, n: Int) {
+        if(n==0) return
+
+        var l = m-1
+        var r = n-1
+
+        for(i in (m+n-1) downTo 0){
+            if(r<0 || (l>=0 && nums1[l]>nums2[r])){
+                nums1[i] = nums1[l--]
+            }else{
+                nums1[i] = nums2[r--]
+            }
+            println("nums1[i]"+nums1[i])
+        }
+
+        for(i in (nums1.size -1) downTo 1){
+            if(nums1[i]==nums1[i-1]){
+                nums1[i] = -1
+            }
+        }
+    }
 }

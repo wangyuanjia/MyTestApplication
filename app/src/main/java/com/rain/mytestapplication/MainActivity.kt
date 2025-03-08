@@ -4,15 +4,15 @@ import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.SharedPreferences
+import android.content.res.Resources.Theme
 import android.os.Bundle
 import android.os.Handler
-import android.os.Looper
 import android.os.Message
 import android.util.Log
 import android.util.SparseArray
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,32 +26,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.ViewModel
+import androidx.core.content.res.ResourcesCompat.ThemeCompat
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.viewModelScope
 import com.rain.mytestapplication.tools.ArrayTools
 import com.rain.mytestapplication.ui.theme.MyTestApplicationTheme
 import com.rain.mytestapplication.viewmodel.HomeViewModel
-
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.io.IOException
-import java.lang.StringBuilder
-
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 
 
@@ -66,6 +65,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+//        setTheme(androidx.appcompat.R.style.Base_Theme_AppCompat)
         setContent {
             MyTestApplicationTheme {
                 // A surface container using the 'background' color from the theme
@@ -77,14 +77,22 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        homeViewModel = ViewModelProvider(this)[HomeViewModel::class.java]
 
-        startActivity(Intent(this,TestActivity::class.java))
+        lifecycleScope.launch {
+
+        }
 
         CoroutineScope(SupervisorJob()).launch {
             testString()
+
+            withContext(Dispatchers.IO){
+                val liveData = MutableLiveData<Int>()
+                delay(100)
+            }
         }
 
-        lifecycleScope.launch {
+        lifecycleScope.launch(SupervisorJob()+ MyExceptionHandler()) {
             supervisorScope {
                 launch {
 
@@ -101,7 +109,7 @@ class MainActivity : ComponentActivity() {
         }
 
 
-
+        homeViewModel.merge(intArrayOf(1,2,3,0,0,0),3, intArrayOf(2,5,6,),3)
         Thread({
             println("")
 //          Looper.getMainLooper()
@@ -112,7 +120,7 @@ class MainActivity : ComponentActivity() {
 //        Looper.prepare()
 
 
-         homeViewModel = ViewModelProvider(this).get(HomeViewModel::class.java)
+
         viewModelStore.keys()
 
         homeViewModel.testLiveData.observe(this) {
@@ -127,29 +135,32 @@ class MainActivity : ComponentActivity() {
 
         }
 
-        isGoogleDNSReachable()
+//        isGoogleDNSReachable()
 
         testSort()
     }
 
 
-     fun isGoogleDNSReachable(): Boolean {
+    fun isGoogleDNSReachable(): Boolean {
         return try {
-            val process = Runtime.getRuntime().exec("ping -c 1 8.8.8.8")
-            process.inputStream.bufferedReader().use { reader ->
-                var isReachable = false
-                reader.forEachLine { line ->
-                    if (line.matches(".*1 packets transmitted, 1 received.*".toRegex())) {
-                        isReachable = true
-                        return@forEachLine
-                    }
-                }
-                print("isReachable1 $isReachable")
-                isReachable
-            }
+            val process = Runtime.getRuntime().exec("ping -c 1 www.google.com")
+            val returnVal = process.waitFor()
+            println("canAccessInternet,isReachable1 ${returnVal == 0}")
+            return returnVal == 0
+//            process.inputStream.bufferedReader().use { reader ->
+//                var isReachable = false
+//                reader.forEachLine { line ->
+//                    if (line.matches(".*1 packets transmitted, 1 received.*".toRegex())) {
+//                        isReachable = true
+//                        return@forEachLine
+//                    }
+//                }
+//                println("canAccessInternet,isReachable1 $isReachable")
+//                isReachable
+//            }
         } catch (e: IOException) {
             e.printStackTrace()
-            print("isReachable 2${e.message}")
+            println("canAccessInternet, isReachable 2${e.message}")
             false
         }
 
@@ -247,6 +258,8 @@ class MainActivity : ComponentActivity() {
 
     fun HomeViewModel.abd(){
         this.main()
+        getResources().getConfiguration().locale
+        baseContext.getString(R.string.app_name)
     }
 
 
@@ -286,6 +299,7 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier.clickable {
                     stateText = "two"
                     Log.d("MainActivity", "text = $stateText")
+                    startActivity(Intent(this@MainActivity,TestActivity::class.java))
                 }
             )
             Text(text = stateText)
@@ -311,6 +325,17 @@ class MainActivity : ComponentActivity() {
 class TreeNode(var `val`: Int) {
     var left: TreeNode? = null
     var right: TreeNode? = null
+
+
+    fun a(){
+        val handler =  Handler(object :Handler.Callback {
+            override fun handleMessage(msg: Message): Boolean {
+                TODO("Not yet implemented")
+            }
+
+        })
+        handler.handleMessage(Message())
+    }
 }
 
 private suspend fun testString() {
@@ -395,3 +420,39 @@ fun log(o: Any?) {
     println("[Thread is ${Thread.currentThread().name}] = $o")
 }
 
+class  MyExceptionHandler : CoroutineExceptionHandler{
+
+    override val key: CoroutineContext.Key<*>
+        get() = CoroutineExceptionHandler
+    override fun handleException(context: CoroutineContext, exception: Throwable) {
+        TODO("Not yet implemented")
+    }
+
+    fun test(s:String):Boolean{
+        s.toInt()
+        val intArray: IntArray = intArrayOf(0,1)
+        val mutList = mutableListOf<Int>()
+        mutList.add(0,1)
+       var input =  s.toCharArray()
+        input[0].isDigit()
+        if(input.size == 0){
+            return false
+        }
+        val middle = input.size/2
+        for (i in 0..middle){
+            if (input[i] != input[input.size-i]){
+                return false
+            }
+        }
+
+
+//        for ( i in  (input.size)..0){
+//
+//        }
+        if (input[0] !in '0'..'9'){
+            return true
+        }
+        return true
+    }
+
+}
