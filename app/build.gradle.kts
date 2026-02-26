@@ -95,6 +95,7 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+    testImplementation ("org.robolectric:robolectric:4.11.1") //
 //    implementation("com.alibaba:arouter-compiler:1.2.1")
 //    implementation(":app-setting")
 
